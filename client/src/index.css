@@ -1,0 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Fraunces', Georgia, serif;
+
+  /* Warm dark restaurant palette */
+  --color-ember-950: #0f0c09;
+  --color-ember-900: #16110d;
+  --color-ember-850: #1c1611;
+  --color-ember-800: #251e16;
+  --color-ember-700: #342b20;
+  --color-ember-600: #4c3f2f;
+  --color-ember-500: #6e5d47;
+
+  --color-gold-100: #faf0d7;
+  --color-gold-200: #f6e0a8;
+  --color-gold-300: #f0c96b;
+  --color-gold-400: #e7ab3c;
+  --color-gold-500: #cf8f24;
+  --color-gold-600: #a46f18;
+  --color-gold-700: #7d5414;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-ember-950);
+  color: #f3ece1;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Subtle warm scrollbar for dark panels */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: #342b20;
+  border-radius: 8px;
+  border: 2px solid #0f0c09;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #4c3f2f;
+}
