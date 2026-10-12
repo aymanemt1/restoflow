@@ -1,5 +1,7 @@
 # RestoFlow — Restaurant Management SaaS
 
+![Laravel](https://img.shields.io/badge/Laravel-FF2D20?style=flat-square&logo=laravel&logoColor=white) ![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB) ![Tests](https://img.shields.io/badge/tests-31_passed-brightgreen?style=flat-square)
+
 A complete restaurant management system: Laravel 12 REST API + React 18 client.
 
 ## Structure
