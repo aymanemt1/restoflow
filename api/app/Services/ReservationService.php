@@ -13,7 +13,10 @@ class ReservationService
 {
     /**
      * Check whether the [start, start + 2h) block overlaps an existing
-     * non-cancelled reservation for the same table on the same date.
+     * non-cancelled reservation for the same table.
+     *
+     * Blocks are compared as real timestamps so a hold that crosses
+     * midnight still conflicts with a booking on the next calendar day.
      */
     public function isTableDoubleBooked(
         int $diningTableId,
@@ -24,18 +27,26 @@ class ReservationService
         $start = Carbon::parse("$date $time");
         $end = $start->copy()->addHours(Reservation::BLOCK_HOURS);
 
+        // Dates are stored as datetimes, so compare the calendar day (not the
+        // raw string). Include the previous day: a block can start that evening.
         $query = Reservation::query()
             ->where('dining_table_id', $diningTableId)
-            ->whereDate('date', $start->toDateString())
             ->where('status', '!=', Reservation::STATUS_CANCELLED)
-            // Overlap: existing.start < new.end AND existing.end > new.start
-            ->whereTime('time', '<', $end->format('H:i:s'))
-            ->whereRaw("time(time, '+".Reservation::BLOCK_HOURS." hours') > ?", [$start->format('H:i:s')]);
+            ->whereDate('date', '>=', $start->copy()->subHours(Reservation::BLOCK_HOURS)->toDateString())
+            ->whereDate('date', '<=', $end->toDateString());
 
         if ($ignoreReservationId) {
             $query->where('id', '!=', $ignoreReservationId);
         }
 
-        return $query->exists();
+        return $query->get()->contains(function (Reservation $existing) use ($start, $end) {
+            $existingStart = Carbon::parse(
+                $existing->date->toDateString().' '.$existing->time->format('H:i:s')
+            );
+            $existingEnd = $existingStart->copy()->addHours(Reservation::BLOCK_HOURS);
+
+            // Overlap: existing.start < new.end AND existing.end > new.start
+            return $existingStart->lt($end) && $existingEnd->gt($start);
+        });
     }
 }

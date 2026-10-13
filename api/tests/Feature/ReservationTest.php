@@ -136,6 +136,59 @@ class ReservationTest extends TestCase
             ->assertOk();
     }
 
+    public function test_blocks_that_cross_midnight_still_conflict(): void
+    {
+        Reservation::create([
+            'customer_name' => 'Late', 'date' => $this->tomorrow, 'time' => '23:00',
+            'party_size' => 2, 'dining_table_id' => $this->tableA->id,
+            'status' => Reservation::STATUS_CONFIRMED,
+        ]);
+
+        $dayAfter = now()->addDays(2)->toDateString();
+
+        // 23:30 sits inside 23:00–01:00, even though that window crosses midnight.
+        $this->actingAsStaff()->postJson('/api/reservations', [
+            'customer_name' => 'Same Night',
+            'date' => $this->tomorrow,
+            'time' => '23:30',
+            'party_size' => 2,
+            'dining_table_id' => $this->tableA->id,
+        ])->assertUnprocessable();
+
+        // 00:30 the next calendar day is still inside the same block.
+        $this->actingAsStaff()->postJson('/api/reservations', [
+            'customer_name' => 'After Midnight',
+            'date' => $dayAfter,
+            'time' => '00:30',
+            'party_size' => 2,
+            'dining_table_id' => $this->tableA->id,
+        ])->assertUnprocessable();
+
+        // The other direction: an early booking blocks the previous evening.
+        Reservation::create([
+            'customer_name' => 'Early', 'date' => $dayAfter, 'time' => '00:30',
+            'party_size' => 2, 'dining_table_id' => $this->tableB->id,
+            'status' => Reservation::STATUS_CONFIRMED,
+        ]);
+
+        $this->actingAsStaff()->postJson('/api/reservations', [
+            'customer_name' => 'Previous Evening',
+            'date' => $this->tomorrow,
+            'time' => '23:00',
+            'party_size' => 2,
+            'dining_table_id' => $this->tableB->id,
+        ])->assertUnprocessable();
+
+        // 01:00 is exactly the end of the 23:00 block — no overlap.
+        $this->actingAsStaff()->postJson('/api/reservations', [
+            'customer_name' => 'Next Slot',
+            'date' => $dayAfter,
+            'time' => '01:00',
+            'party_size' => 2,
+            'dining_table_id' => $this->tableA->id,
+        ])->assertCreated();
+    }
+
     public function test_reservation_validation(): void
     {
         $this->actingAsStaff()->postJson('/api/reservations', [
